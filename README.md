@@ -1,36 +1,43 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# cache-console
 
-## Getting Started
+SQLite 缓存控制台：对外 KV API + 管理界面，并可联动使 Next.js 自身缓存标签失效。
 
-First, run the development server:
+## 开发
 
 ```bash
+cp .env.example .env.local
 npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
 ```
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+打开 [http://localhost:3000](http://localhost:3000)。未配置环境变量时，开发态会使用固定口令 / API Key（启动日志会警告）。
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+生产必须设置：
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+| 变量 | 用途 |
+|---|---|
+| `ADMIN_PASSWORD` | 控制台登录密码 |
+| `AUTH_SECRET` | 会话签名密钥 |
+| `CACHE_API_KEY` | 对外 `/api/kv` 鉴权 |
+| `CACHE_DB` | SQLite 路径，默认 `data/cache.db` |
 
-## Learn More
+## 登录
 
-To learn more about Next.js, take a look at the following resources:
+管理页 `/`、`/entries` 需要会话 Cookie。`POST /api/session` `{ "password": "..." }` 成功后写入 httpOnly Cookie（7 天）。
 
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
+## 对外 KV API
 
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
+鉴权：`Authorization: Bearer <CACHE_API_KEY>` 或 `x-api-key`。
 
-## Deploy on Vercel
+- `GET /api/kv/[key]` 命中并计数
+- `PUT /api/kv/[key]` 写入 `{ value, ttlSeconds?, tags? }`
+- `DELETE /api/kv/[key]`
+- `GET /api/kv?prefix=&limit=` 键名 + 截断预览
+- `POST /api/kv/invalidate` `{ tags }`
 
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
+## 管理 API
 
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+均需登录 Cookie；未登录返回 401（页面层再跳转 `/login`）。
+
+## 联动演示
+
+`/demo` 使用 `unstable_cache(..., { tags: ['demo'] })` 缓存时间戳和随机数。按钮调用 `POST /api/next-cache/revalidate` `{ tag: "demo" }`。这只演示 Next 缓存标签失效，不是 SQLite KV 的能力。

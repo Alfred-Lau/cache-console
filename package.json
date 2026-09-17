@@ -6,7 +6,8 @@
     "dev": "next dev",
     "build": "next build",
     "start": "next start",
-    "lint": "eslint"
+    "lint": "eslint",
+    "test:cache": "node --experimental-strip-types --test src/lib/cache.test.ts"
   },
   "dependencies": {
     "next": "16.3.5",
@@ -15,7 +16,7 @@
   },
   "devDependencies": {
     "@tailwindcss/postcss": "^4",
-    "@types/node": "^20",
+    "@types/node": "^22.20.3",
     "@types/react": "^19",
     "@types/react-dom": "^19",
     "eslint": "^9",
